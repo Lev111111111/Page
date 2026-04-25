@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React 课程管理页面</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap');
+
+        :root {
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 24px;
+            --space-6: 32px;
+            --space-7: 48px;
+            --space-8: 64px;
+            --space-9: 96px;
+
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            --ink-1: oklch(0.22 0.02 220);
+            --ink-2: oklch(0.38 0.02 220);
+            --ink-3: oklch(0.5 0.015 220);
+
+            --surface-1: oklch(0.98 0.01 210);
+            --surface-2: oklch(0.95 0.015 210);
+            --surface-3: oklch(0.92 0.02 210);
+
+            --accent: oklch(0.62 0.13 190);
+            --accent-strong: oklch(0.55 0.14 190);
+            --accent-soft: oklch(0.86 0.06 190);
+            --success: oklch(0.7 0.12 145);
+            --danger: oklch(0.62 0.17 25);
+
+            --shadow-sm: 0 6px 18px oklch(0.3 0.02 220 / 0.12);
+            --shadow-md: 0 14px 32px oklch(0.3 0.02 220 / 0.16);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background:
+                radial-gradient(60rem 35rem at 8% -10%, oklch(0.94 0.04 200 / 0.6), transparent 60%),
+                radial-gradient(50rem 30rem at 95% 10%, oklch(0.92 0.05 150 / 0.5), transparent 55%),
+                var(--surface-1);
+            color: var(--ink-1);
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            position: relative;
+            padding: clamp(32px, 4vw, 56px) clamp(20px, 4vw, 40px);
+            background: linear-gradient(145deg, oklch(0.96 0.02 210), oklch(0.93 0.03 210));
+            border-bottom: 1px solid var(--surface-3);
+        }
+
+        .app-header::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0 0;
+            height: 3px;
+            background: color-mix(in oklch, var(--accent) 70%, transparent);
+            opacity: 0.7;
+        }
+
+        .app-header > * {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .app-header h1 {
+            font-family: 'Sora', 'Noto Sans SC', system-ui, sans-serif;
+            margin-bottom: var(--space-4);
+            font-size: clamp(2rem, 3vw, 2.8rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            flex-wrap: wrap;
+            font-size: 1rem;
+            color: var(--ink-2);
+        }
+
+        .stat-item {
+            background: var(--surface-1);
+            border: 1px solid var(--surface-3);
+            padding: var(--space-2) var(--space-4);
+            border-radius: 999px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-item strong {
+            font-size: 1.05rem;
+            color: var(--accent-strong);
+            margin-left: var(--space-1);
+        }
+
+        .app-main {
+            flex: 1;
+            padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 40px) var(--space-8);
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            margin-bottom: var(--space-6);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.95rem 1.25rem;
+            font-size: 1rem;
+            border: 1.5px solid var(--surface-3);
+            border-radius: 999px;
+            outline: none;
+            background: var(--surface-1);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .search-input:focus,
+        .search-input:focus-visible {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 18%, transparent);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: var(--space-6);
+            align-items: start;
+        }
+
+        @media (max-width: 880px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-section {
+            background: var(--surface-1);
+            padding: var(--space-6);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--surface-3);
+            height: fit-content;
+            position: sticky;
+            top: var(--space-6);
+        }
+
+        .course-form h2 {
+            margin-bottom: var(--space-4);
+            color: var(--ink-1);
+            font-size: 1.45rem;
+            font-weight: 700;
+            font-family: 'Sora', 'Noto Sans SC', system-ui, sans-serif;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-4);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--space-2);
+            font-weight: 600;
+            color: var(--ink-2);
+            font-size: 0.95rem;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 0.7rem 0.95rem;
+            font-size: 1rem;
+            border: 1.5px solid var(--surface-3);
+            border-radius: var(--radius-sm);
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            font-family: inherit;
+            background: var(--surface-1);
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-input:focus-visible,
+        .form-textarea:focus-visible {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .error-message {
+            display: block;
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: var(--space-2);
+        }
+
+        .btn {
+            padding: 0.7rem 1.4rem;
+            font-size: 0.98rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: oklch(0.98 0.01 210);
+            width: 100%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            background: var(--accent-strong);
+        }
+
+        .btn-secondary {
+            background: var(--accent-soft);
+            color: var(--accent-strong);
+            padding: 0.5rem 1.1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-secondary:hover {
+            background: color-mix(in oklch, var(--accent-soft) 70%, white);
+        }
+
+        .btn-danger {
+            background: color-mix(in oklch, var(--danger) 18%, white);
+            color: oklch(0.38 0.02 220);
+            padding: 0.5rem 1.1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-danger:hover {
+            background: color-mix(in oklch, var(--danger) 28%, white);
+        }
+
+        .list-section {
+            background: var(--surface-1);
+            padding: var(--space-6);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--surface-3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-8) var(--space-5);
+            color: var(--ink-3);
+            font-size: 1.05rem;
+        }
+
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .course-card {
+            background: var(--surface-2);
+            border: 1px solid var(--surface-3);
+            border-radius: var(--radius-md);
+            padding: var(--space-5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--space-4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .course-card:hover {
+            border-color: color-mix(in oklch, var(--accent) 35%, var(--surface-3));
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .course-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .course-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--ink-1);
+            margin-bottom: var(--space-2);
+            word-break: break-word;
+            font-family: 'Sora', 'Noto Sans SC', system-ui, sans-serif;
+        }
+
+        .course-description {
+            color: var(--ink-2);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            word-break: break-word;
+            max-width: 70ch;
+        }
+
+        .course-actions {
+            display: flex;
+            gap: var(--space-3);
+            flex-shrink: 0;
+        }
+
+        .app-header,
+        .search-section,
+        .form-section,
+        .list-section {
+            animation: fade-up 0.6s ease-out both;
+        }
+
+        .form-section {
+            animation-delay: 0.05s;
+        }
+
+        .list-section {
+            animation-delay: 0.1s;
+        }
+
+        .course-card {
+            animation: fade-up 0.45s ease-out both;
+        }
+
+        .course-card:nth-child(2) {
+            animation-delay: 0.04s;
+        }
+
+        .course-card:nth-child(3) {
+            animation-delay: 0.08s;
+        }
+
+        .course-card:nth-child(4) {
+            animation-delay: 0.12s;
+        }
+
+        .course-card:nth-child(5) {
+            animation-delay: 0.16s;
+        }
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 520px) {
+            .course-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .course-actions {
+                justify-content: stretch;
+            }
+
+            .btn-secondary,
+            .btn-danger {
+                flex: 1;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback, forwardRef } = React;
+
+        // useLocalStorage 自定义 Hook
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.warn(`Error reading localStorage key "${key}":`, error);
+                    return initialValue;
+                }
+            });
+
+            useEffect(() => {
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(storedValue));
+                } catch (error) {
+                    console.warn(`Error setting localStorage key "${key}":`, error);
+                }
+            }, [key, storedValue]);
+
+            return [storedValue, setStoredValue];
+        }
+
+        // useDebounce 自定义 Hook
+        function useDebounce(value, delay) {
+            const [debouncedValue, setDebouncedValue] = useState(value);
+
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    setDebouncedValue(value);
+                }, delay);
+
+                return () => {
+                    clearTimeout(timer);
+                };
+            }, [value, delay]);
+
+            return debouncedValue;
+        }
+
+        // CourseStats 组件
+        function CourseStats({ totalCourses, filteredCourses }) {
+            return (
+                <div className="stats">
+                    <span className="stat-item">
+                        总课程数: <strong>{totalCourses}</strong>
+                    </span>
+                    {filteredCourses !== totalCourses && (
+                        <span className="stat-item">
+                            筛选结果: <strong>{filteredCourses}</strong>
+                        </span>
+                    )}
+                </div>
+            );
+        }
+
+        // CourseForm 组件（forwardRef）
+        const CourseForm = forwardRef(({ onAddCourse, onFocusAfterAdd }, ref) => {
+            const [name, setName] = useState('');
+            const [description, setDescription] = useState('');
+            const [error, setError] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+
+                if (!name.trim()) {
+                    setError('课程名称不能为空');
+                    return;
+                }
+
+                onAddCourse(name.trim(), description.trim());
+                setName('');
+                setDescription('');
+                setError('');
+                onFocusAfterAdd();
+            };
+
+            return (
+                <div className="course-form">
+                    <h2>新增课程</h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="courseName">课程名称</label>
+                            <input
+                                ref={ref}
+                                id="courseName"
+                                type="text"
+                                value={name}
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    setError('');
+                                }}
+                                placeholder="请输入课程名称"
+                                className="form-input"
+                            />
+                            {error && <span className="error-message">{error}</span>}
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="courseDescription">课程简介</label>
+                            <textarea
+                                id="courseDescription"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="请输入课程简介"
+                                className="form-textarea"
+                                rows="3"
+                            />
+                        </div>
+
+                        <button type="submit" className="btn btn-primary">
+                            添加课程
+                        </button>
+                    </form>
+                </div>
+            );
+        });
+
+        // CourseList 组件
+        function CourseList({ courses, onDeleteCourse, onStudyCourse }) {
+            if (courses.length === 0) {
+                return (
+                    <div className="empty-state">
+                        <p>暂无课程</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="course-list">
+                    {courses.map(course => (
+                        <div key={course.id} className="course-card">
+                            <div className="course-content">
+                                <h3 className="course-name">{course.name}</h3>
+                                {course.description && (
+                                    <p className="course-description">{course.description}</p>
+                                )}
+                            </div>
+                            <div className="course-actions">
+                                <button
+                                    onClick={() => onStudyCourse(course.name)}
+                                    className="btn btn-secondary"
+                                >
+                                    学习
+                                </button>
+                                <button
+                                    onClick={() => onDeleteCourse(course.id)}
+                                    className="btn btn-danger"
+                                >
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // 主 App 组件
+        function App() {
+            const sampleCourses = [
+                {
+                    id: 1001,
+                    name: 'React Hooks 实战',
+                    description: '掌握 useEffect/useRef/useMemo/useCallback 与自定义 Hook 的完整流程。',
+                    createdAt: '2024-03-02T08:30:00.000Z'
+                },
+                {
+                    id: 1002,
+                    name: '前端组件化设计',
+                    description: '拆分组件职责，梳理 UI 与逻辑的边界。',
+                    createdAt: '2024-03-10T08:30:00.000Z'
+                },
+                {
+                    id: 1003,
+                    name: '本地存储与状态持久化',
+                    description: '用 localStorage 保存课程数据与用户输入状态。',
+                    createdAt: '2024-03-18T08:30:00.000Z'
+                }
+            ];
+
+            const [courses, setCourses] = useLocalStorage('courses', sampleCourses);
+            const [searchTerm, setSearchTerm] = useState('');
+            const debouncedSearchTerm = useDebounce(searchTerm, 300);
+            const formRef = useRef();
+
+            const filteredCourses = useMemo(() => {
+                return courses.filter(course =>
+                    course.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+                );
+            }, [courses, debouncedSearchTerm]);
+
+            const handleAddCourse = useCallback((name, description) => {
+                const newCourse = {
+                    id: Date.now(),
+                    name,
+                    description,
+                    createdAt: new Date().toISOString()
+                };
+                setCourses(prev => [...prev, newCourse]);
+            }, [setCourses]);
+
+            const handleDeleteCourse = useCallback((id) => {
+                setCourses(prev => prev.filter(course => course.id !== id));
+            }, [setCourses]);
+
+            const handleStudyCourse = useCallback((name) => {
+                alert(`正在学习 ${name}`);
+            }, []);
+
+            const handleInputFocus = useCallback(() => {
+                if (formRef.current) {
+                    formRef.current.focus();
+                }
+            }, []);
+
+            return (
+                <div className="app">
+                    <header className="app-header">
+                        <h1>React 课程管理</h1>
+                        <CourseStats totalCourses={courses.length} filteredCourses={filteredCourses.length} />
+                    </header>
+
+                    <main className="app-main">
+                        <div className="search-section">
+                            <input
+                                type="text"
+                                placeholder="搜索课程..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="search-input"
+                            />
+                        </div>
+
+                        <div className="content-grid">
+                            <aside className="form-section">
+                                <CourseForm
+                                    ref={formRef}
+                                    onAddCourse={handleAddCourse}
+                                    onFocusAfterAdd={handleInputFocus}
+                                />
+                            </aside>
+
+                            <section className="list-section">
+                                <CourseList
+                                    courses={filteredCourses}
+                                    onDeleteCourse={handleDeleteCourse}
+                                    onStudyCourse={handleStudyCourse}
+                                />
+                            </section>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        // 渲染应用
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
